@@ -124,6 +124,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	static HWND hEdit2;
 	static HWND hEdit3;
 	static HWND hEdit4;
+	static HWND hEdit5;
 	switch (msg)
 	{
 	case WM_CREATE:
@@ -133,8 +134,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		hEdit2 = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("EDIT"), TEXT(".sam"), WS_VISIBLE | WS_CHILD | ES_AUTOHSCROLL, 0, 0, 0, 0, hWnd, 0, ((LPCREATESTRUCT)lParam)->hInstance, 0);
 		CreateWindow(TEXT("STATIC"), TEXT("アプリケーションパス:"), WS_VISIBLE | WS_CHILD, 10, 90, 256, 32, hWnd, 0, ((LPCREATESTRUCT)lParam)->hInstance, 0);
 		hEdit3 = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("EDIT"), TEXT("C:\\Windows\\System32\\notepad.exe"), WS_VISIBLE | WS_CHILD | ES_AUTOHSCROLL, 0, 0, 0, 0, hWnd, 0, ((LPCREATESTRUCT)lParam)->hInstance, 0);
-		CreateWindow(TEXT("STATIC"), TEXT("アプリケーションアイコンパス:"), WS_VISIBLE | WS_CHILD, 10, 130, 256, 32, hWnd, 0, ((LPCREATESTRUCT)lParam)->hInstance, 0);
+		CreateWindow(TEXT("STATIC"), TEXT("アイコンパス:"), WS_VISIBLE | WS_CHILD, 10, 130, 256, 32, hWnd, 0, ((LPCREATESTRUCT)lParam)->hInstance, 0);
 		hEdit4 = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("EDIT"), TEXT("C:\\Windows\\System32\\notepad.exe"), WS_VISIBLE | WS_CHILD | ES_AUTOHSCROLL, 0, 0, 0, 0, hWnd, 0, ((LPCREATESTRUCT)lParam)->hInstance, 0);
+		CreateWindow(TEXT("STATIC"), TEXT("アイコン番号:"), WS_VISIBLE | WS_CHILD, 10, 170, 256, 32, hWnd, 0, ((LPCREATESTRUCT)lParam)->hInstance, 0);
+		hEdit5 = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("EDIT"), TEXT("0"), WS_VISIBLE | WS_CHILD | ES_AUTOHSCROLL | ES_NUMBER, 0, 0, 0, 0, hWnd, (HMENU)1000, ((LPCREATESTRUCT)lParam)->hInstance, 0);
 		hButton1 = CreateWindow(TEXT("BUTTON"), TEXT("登録"), WS_VISIBLE | WS_CHILD, 0, 0, 0, 0, hWnd, (HMENU)IDOK, ((LPCREATESTRUCT)lParam)->hInstance, 0);
 		hButton2 = CreateWindow(TEXT("BUTTON"), TEXT("解除"), WS_VISIBLE | WS_CHILD, 0, 0, 0, 0, hWnd, (HMENU)IDCANCEL, ((LPCREATESTRUCT)lParam)->hInstance, 0);
 		break;
@@ -143,8 +146,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		MoveWindow(hEdit2, 276, 50, LOWORD(lParam) - 286, 32, TRUE);
 		MoveWindow(hEdit3, 276, 90, LOWORD(lParam) - 286, 32, TRUE);
 		MoveWindow(hEdit4, 276, 130, LOWORD(lParam) - 286, 32, TRUE);
-		MoveWindow(hButton1, 10, 170, 256, 32, TRUE);
-		MoveWindow(hButton2, 276, 170, 256, 32, TRUE);
+		MoveWindow(hEdit5, 276, 170, LOWORD(lParam) - 286, 32, TRUE);
+		MoveWindow(hButton1, 10, 210, 256, 32, TRUE);
+		MoveWindow(hButton2, 276, 210, 256, 32, TRUE);
 		break;
 	case WM_COMMAND:
 		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
@@ -199,7 +203,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ComDlg32\\OpenSavePidlMRU"), 0, KEY_ALL_ACCESS, &hKey);
 			DeleteRegKey(hKey, &szApplicationExt[1]);
 			RegCloseKey(hKey);
-			RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts"), 0, KEY_ALL_ACCESS, &hKey);
+			RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts"), GetDlgItemInt(hWnd, 1000, 0, 0), KEY_ALL_ACCESS, &hKey);
 			DeleteRegKey(hKey, szApplicationExt);
 			RegCloseKey(hKey);
 			SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
