@@ -10,76 +10,105 @@ TCHAR szClassName[] = TEXT("Window");
 
 BOOL RegRelSet(LPCTSTR lpszApplicationName, LPCTSTR lpszApplicationPath, LPCTSTR lpszApplicationIconPath, DWORD nIconIndex)
 {
-	BOOL bReturn = FALSE;
+	if (!lpszApplicationIconPath)
+	{
+		return FALSE;
+	}
 	HKEY hTopKey;
 	DWORD dwDisposition;
-	if (RegCreateKeyEx(HKEY_CLASSES_ROOT, lpszApplicationName, 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hTopKey, &dwDisposition) == ERROR_SUCCESS)
+	if (RegCreateKeyEx(HKEY_CLASSES_ROOT, lpszApplicationName, 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hTopKey, &dwDisposition) != ERROR_SUCCESS)
 	{
-		HKEY hShellKey;
-		if (RegCreateKeyEx(hTopKey, TEXT("shell"), 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hShellKey, &dwDisposition) == ERROR_SUCCESS)
-		{
-			HKEY hOpenKey;
-			if (RegCreateKeyEx(hShellKey, TEXT("open"), 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hOpenKey, &dwDisposition) == ERROR_SUCCESS)
-			{
-				HKEY hCommandKey;
-				if (RegCreateKeyEx(hOpenKey, TEXT("command"), 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hCommandKey, &dwDisposition) == ERROR_SUCCESS)
-				{
-					TCHAR szRegString[MAX_PATH];
-					wsprintf(szRegString, TEXT("\"%s\" \"%%1\""), lpszApplicationPath);
-					DWORD dwSize = sizeof(TCHAR) * (lstrlen(szRegString) + 1);
-					if (RegSetValueEx(hCommandKey, NULL, 0, REG_SZ, (const unsigned char *)szRegString, dwSize) == ERROR_SUCCESS)
-					{
-						if (lpszApplicationIconPath)
-						{
-							HKEY hIconKey;
-							if (RegCreateKeyEx(hTopKey, TEXT("DefaultIcon"), 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hIconKey, &dwDisposition) == ERROR_SUCCESS)
-							{
-								wsprintf(szRegString, TEXT("%s,%d"), lpszApplicationIconPath, nIconIndex);
-								dwSize = sizeof(TCHAR) * (lstrlen(szRegString) + 1);
-								if (RegSetValueEx(hIconKey, NULL, 0, REG_SZ, (const unsigned char *)szRegString, dwSize) == ERROR_SUCCESS)
-								{
-									bReturn = TRUE;
-								}
-								RegCloseKey(hIconKey);
-							}
-						}
-					}
-					RegCloseKey(hCommandKey);
-				}
-				RegCloseKey(hOpenKey);
-			}
-			RegCloseKey(hShellKey);
-		}
-		RegCloseKey(hTopKey);
+		return FALSE;
 	}
-	return bReturn;
+	HKEY hShellKey;
+	if (RegCreateKeyEx(hTopKey, TEXT("shell"), 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hShellKey, &dwDisposition) != ERROR_SUCCESS)
+	{
+		RegCloseKey(hTopKey);
+		return FALSE;
+	}
+	HKEY hOpenKey;
+	if (RegCreateKeyEx(hShellKey, TEXT("open"), 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hOpenKey, &dwDisposition) != ERROR_SUCCESS)
+	{
+		RegCloseKey(hShellKey);
+		RegCloseKey(hTopKey);
+		return FALSE;
+	}
+	HKEY hCommandKey;
+	if (RegCreateKeyEx(hOpenKey, TEXT("command"), 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hCommandKey, &dwDisposition) != ERROR_SUCCESS)
+	{
+		RegCloseKey(hOpenKey);
+		RegCloseKey(hShellKey);
+		RegCloseKey(hTopKey);
+		return FALSE;
+	}
+	TCHAR szRegString[MAX_PATH];
+	wsprintf(szRegString, TEXT("\"%s\" \"%%1\""), lpszApplicationPath);
+	DWORD dwSize = sizeof(TCHAR) * (lstrlen(szRegString) + 1);
+	if (RegSetValueEx(hCommandKey, NULL, 0, REG_SZ, (const unsigned char *)szRegString, dwSize) != ERROR_SUCCESS)
+	{
+		RegCloseKey(hCommandKey);
+		RegCloseKey(hOpenKey);
+		RegCloseKey(hShellKey);
+		RegCloseKey(hTopKey);
+		return FALSE;
+	}
+	HKEY hIconKey;
+	if (RegCreateKeyEx(hTopKey, TEXT("DefaultIcon"), 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hIconKey, &dwDisposition) != ERROR_SUCCESS)
+	{
+		RegCloseKey(hCommandKey);
+		RegCloseKey(hOpenKey);
+		RegCloseKey(hShellKey);
+		RegCloseKey(hTopKey);
+		return FALSE;
+	}
+	wsprintf(szRegString, TEXT("%s,%d"), lpszApplicationIconPath, nIconIndex);
+	dwSize = sizeof(TCHAR) * (lstrlen(szRegString) + 1);
+	if (RegSetValueEx(hIconKey, NULL, 0, REG_SZ, (const unsigned char *)szRegString, dwSize) != ERROR_SUCCESS)
+	{
+		RegCloseKey(hIconKey);
+		RegCloseKey(hCommandKey);
+		RegCloseKey(hOpenKey);
+		RegCloseKey(hShellKey);
+		RegCloseKey(hTopKey);
+		return FALSE;
+	}
+	RegCloseKey(hIconKey);
+	RegCloseKey(hCommandKey);
+	RegCloseKey(hOpenKey);
+	RegCloseKey(hShellKey);
+	RegCloseKey(hTopKey);
+	return TRUE;
 }
 
 BOOL RegExtSet(LPCTSTR lpszApplicationName, LPCTSTR lpszApplicationExt)
 {
-	BOOL bReturn = FALSE;
 	HKEY hTopKey;
 	DWORD dwDisposition;
-	if (RegCreateKeyEx(HKEY_CLASSES_ROOT, lpszApplicationExt, 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hTopKey, &dwDisposition) == ERROR_SUCCESS)
+	if (RegCreateKeyEx(HKEY_CLASSES_ROOT, lpszApplicationExt, 0, TEXT(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hTopKey, &dwDisposition) != ERROR_SUCCESS)
 	{
-		DWORD dwType, dwSize = MAX_PATH;
-		BYTE szRegString[MAX_PATH];
-		if (RegQueryValueEx(hTopKey, lpszApplicationName, 0, &dwType, szRegString, &dwSize) == ERROR_SUCCESS)
-		{
-			bReturn = TRUE;
-		}
-		else
-		{
-			dwSize = sizeof(TCHAR) * (lstrlen(lpszApplicationName) + 1);
-			if (RegSetValueEx(hTopKey, NULL, 0, REG_SZ, (CONST BYTE *)lpszApplicationName, dwSize) == ERROR_SUCCESS)
-			{
-				bReturn = TRUE;
-			}
-			RegCloseKey(hTopKey); return(TRUE);
-		}
-		RegCloseKey(hTopKey);
+		return FALSE;
 	}
-	return bReturn;
+
+	DWORD dwType, dwSize = MAX_PATH;
+	BYTE szRegString[MAX_PATH];
+
+	// 既に登録されているときは TRUE を返す
+	if (RegQueryValueEx(hTopKey, lpszApplicationName, 0, &dwType, szRegString, &dwSize) == ERROR_SUCCESS)
+	{
+		RegCloseKey(hTopKey);
+		return TRUE;
+	}
+
+	// 登録されていないときは登録する
+	dwSize = sizeof(TCHAR) * (lstrlen(lpszApplicationName) + 1);
+	if (RegSetValueEx(hTopKey, NULL, 0, REG_SZ, (CONST BYTE *)lpszApplicationName, dwSize) != ERROR_SUCCESS)
+	{
+		RegCloseKey(hTopKey);
+		return FALSE;
+	}
+
+	RegCloseKey(hTopKey);
+	return TRUE;
 }
 
 DWORD DeleteRegKey(HKEY hStartKey, LPTSTR pKeyName)
